@@ -1,41 +1,172 @@
 package gui;
 
+import java.sql.Date;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Scanner;
 
+import negocio.Equipamentos;
+import negocio.Funcionario;
+import negocio.Reserva;
 import negocio.comandaOperacoes;
 
 public class Main {
 	
 	public static void main(String args[]) {
 		Scanner in = new Scanner(System.in);
+		Scanner in2 = new Scanner(System.in);
 		comandaOperacoes comandaOperacao = new comandaOperacoes();
 		String nome = null;
 		String descricao = null;
+		String lixo = null;
 		int option;
 		do {
-			System.out.println("====Digite o Número da opção====");
-			System.out.println("1) Listar funcionarios em ordem alfabética");
-			System.out.println("2) Buscar funcionário por nome");
-			System.out.println("3) Buscar equipamento por descrição");
-			System.out.println("4) Fazer uma nova reserva");
+			System.out.println("====Digite o Nï¿½mero da opï¿½ï¿½o====");
+			System.out.println("1) Listar funcionarios em ordem alfabï¿½tica -ok");
+			System.out.println("2) Buscar funcionï¿½rio por nome -ok");
+			System.out.println("3) Buscar equipamento por descriÃ§Ã£o -ok");
+			System.out.println("4) Fazer uma nova reserva -ok");
 			System.out.println("5) Relatorio de reservas futuras");
 			System.out.println("6) Visualizar a quantidade de reservas de um equipamento e o total do custo correspondente");
-			System.out.println("7) Listar número de reserva e custo total de uso de equipamentos por funcinário");
-			System.out.println("8) TODO: [Uma consulta à escolha do grupo (deve envolver pelo menos uma subconsulta)]");
+			System.out.println("7) Listar nï¿½mero de reserva e custo total de uso de equipamentos por funcinï¿½rio");
+			System.out.println("8) TODO: [Uma consulta ï¿½ escolha do grupo (deve envolver pelo menos uma subconsulta)]");
 			System.out.println("0) Sair");
 			option = in.nextInt();
-			if(option == 2) {
-				System.out.println("Digite o nome");
-				nome = in.nextLine();
-				comandaOperacao.realizaOperacoesByName(option, nome);
-			}
-			if( option == 3) {
-				System.out.println("Digite a descricao");
-				descricao = in.nextLine();
-				comandaOperacao.realizaOperacoes(option, descricao);
-			}
-			if(option ==4) {
-				//fazernova reserva
+			switch(option){
+				case 0:{
+					try {
+						if(comandaOperacao.sair()){
+							System.out.println("ConexÃ£o fechada adequadamente!");
+						}
+					} catch (SQLException e) {
+						System.out.println("Erro!");
+					}
+					break;
+				}
+				case 1: {
+					ArrayList<Funcionario> todosFunc;
+					try {
+						todosFunc = comandaOperacao.listaFuncionarios();
+						if(todosFunc == null){
+							System.out.println("NÃ£o hÃ¡ funcionarios cadastrados");
+						}
+						else{
+							for(Funcionario f: todosFunc){
+								System.out.println(f);
+							}
+						}
+					} catch (SQLException e) {
+						System.out.println("Erro!");
+					}
+					break;
+				}
+				case 2:{
+					ArrayList<Funcionario> funcFiltroPorNome;
+					System.out.println("Digite o nome");
+					nome = in2.nextLine();
+					try {
+						funcFiltroPorNome = comandaOperacao.buscaFuncionarioPorNome(nome);
+						if(funcFiltroPorNome.isEmpty()){
+							System.out.println("NÃ£o hÃ¡ funcionarios com esse nome!");
+						}
+						else{
+							for(Funcionario f: funcFiltroPorNome){
+								System.out.println(f);
+							}
+						}
+					} catch (SQLException e) {
+						System.out.println("Erro!");
+					}
+					break;
+				}
+				case 3:{
+					ArrayList<Equipamentos> EquipFiltroPorDesc;
+					System.out.println("Digite a descricao");
+					descricao = in2.nextLine();
+					try {
+						EquipFiltroPorDesc = comandaOperacao.buscaEquipPorDescricao(descricao);
+						if(EquipFiltroPorDesc.isEmpty()){
+							System.out.println("NÃ£o hÃ¡ funcionarios com esse nome!");
+						}
+						else{
+							for(Equipamentos equip: EquipFiltroPorDesc){
+								System.out.println(equip);
+							}
+						}
+					} catch (SQLException e) {
+						System.out.println("Erro!");
+					}
+					break;
+				}
+				case 4: {
+					try {
+					//	DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+						System.out.println("Digite o ano da data de inicio da reserva");
+						String anoInicio = in2.nextLine();
+						System.out.println("Digite o mes da data de inicio da reserva");
+						String mesInicio = in2.nextLine();
+						System.out.println("Digite o dia da data de inicio da reserva");
+						String diaInicio = in2.nextLine();
+						System.out.println("Digite o ano da data de tÃ©rmino da reserva");
+						String anoFim = in2.nextLine();
+						System.out.println("Digite o mes da data de tÃ©rmino da reserva");
+						String mesFim = in2.nextLine();
+						System.out.println("Digite o dia da data de tÃ©rmino da reserva");
+						String diaFim = in2.nextLine();
+							LocalDate data_inicial_reserva =  LocalDate.parse(""+anoInicio +  "-"+ mesInicio+ "-" + diaInicio + "");
+							LocalDate data_final_reserva =  LocalDate.parse(""+anoFim +  "-"+ mesFim+ "-" + diaInicio + "");
+					
+						System.out.println("Digite o seu nÃºmero de matrÃ­cula");
+						String nro_matricula = in2.nextLine();
+						System.out.println 	("Digite o seu identificador de equipamento");
+						String identificador_equip = in2.nextLine();
+					
+					if(comandaOperacao.fazerNovaReserva(new Reserva(data_inicial_reserva,data_final_reserva, nro_matricula,identificador_equip))){
+						System.out.println("Reserva feita com sucesso!");
+					}
+					} 
+					catch (Exception e) {
+							System.out.println("Erro!");
+					}
+					break;
+				}
+				case 5: {
+					ArrayList<String> filtroEquipFunctData;
+					try {
+						filtroEquipFunctData = comandaOperacao.relatorioReservasFuturas();
+						if(filtroEquipFunctData.isEmpty()){
+							System.out.println("NÃ£o hÃ¡ reservas mais recentes que a data atual!");
+						}
+						else{
+							for(String s: filtroEquipFunctData){
+								System.out.println(s);
+							}
+						}
+					} catch (SQLException e) {
+						System.out.println("Erro!");
+					}
+					break;
+				}
+				case 6: {
+					comandaOperacao.qtdReservasEquipECusto();
+					break;
+				}
+				case 7: {
+					comandaOperacao.listarNumeroDeReservasECustoTotalporFunct();
+					break;
+				}
+				case 8: {
+					//TODO: comandaOperacao.consultaAEscolha();
+					System.out.println("Consulta a escolha");
+					break;
+				}
+				default:{
+					System.out.println("OpÃ§Ã£o nÃ£o existente!");
+				}
 			}
 		}while(option !=0);
 	}

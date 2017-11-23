@@ -1,38 +1,55 @@
 package dados;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import negocio.Equipamentos;
 import negocio.Funcionario;
 import negocio.Reserva;
+import negocio.comandaOperacoes;
 
 public class EmprestimosBD {
 	private Connection conexao;
+	private static EmprestimosBD ref = null;
 	public EmprestimosBD() throws SQLException{
 		conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
 }
-	public void sair() {
+	
+	public static EmprestimosBD getInstance() throws ClassNotFoundException, SQLException {
+		if (ref == null)
+			ref = new EmprestimosBD();
+		return ref;
+	}
+	//consulta 0
+	public Boolean sair() {
+		boolean sucesso = false;
 		try {
 			conexao.close();
+			sucesso = true;
 		} catch (SQLException e) {
-			System.out.println("Erro ao fechar conex�o");
+			System.out.println("Erro ao fechar conex�o");
 		}	
+		return sucesso;
 	}
-	public ArrayList<String> getAllFuncionarios() {
+	//consulta 01
+	public ArrayList<Funcionario> getAllFuncionarios() {
 		try {
 			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
-			String comandoSQL = "select funcionarios.nome_completo from funcionario order by funcionarios.nome_completo asc";
+			String comandoSQL = "select * from funcionarios order by funcionarios.nome_completo asc";
 			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
 			ResultSet registros = consultaSQL.executeQuery(); 
-			ArrayList<String> allFuncionarios = new ArrayList<String>();
+			ArrayList<Funcionario> allFuncionarios = new ArrayList<Funcionario>();
 	
 		    while(registros.next()){
-		    	allFuncionarios.add(registros.getString("nome_completo"));
+		    	allFuncionarios.add(
+		    			new Funcionario(registros.getString("nro_matricula"), registros.getDate("data_nasc"), registros.getDate("data_admissao"),
+    					registros.getString("sexo"), registros.getString("nome_completo"), registros.getString("endereco"), registros.getDouble("salario_mensal")));
 		    }
 		    registros.close();
 		    consultaSQL.close();
@@ -44,14 +61,16 @@ public class EmprestimosBD {
 		}
 		
 	}
+	//consulta 02
 	public ArrayList<Funcionario> getFuncionarioPorNome(String nome) {
-		try {
+		try {	
 			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
-			String comandoSQL = "select nro_matricula, data_nasc, data_admissao, sexo, endreco, salario_mensal from funcionarios where funcionario.nome= "+"''"+ nome + "''";
+			String comandoSQL = ("SELECT * FROM FUNCIONARIOS WHERE FUNCIONARIOS.nome_completo LIKE ?");
 			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
-			ResultSet registros = consultaSQL.executeQuery(); 
+			consultaSQL.setString(1, "%" + nome + "%");
+			ResultSet registros = consultaSQL.executeQuery();
 			ArrayList<Funcionario> filtroFunct = new ArrayList<Funcionario>();
-	
+
 		    while(registros.next()){
 		    	filtroFunct.add(
 		    			new Funcionario(registros.getString("nro_matricula"), registros.getDate("data_nasc"), registros.getDate("data_admissao"),
@@ -64,17 +83,18 @@ public class EmprestimosBD {
 		}
 		catch (SQLException e) {
 			System.out.println("Erro ao instanciar o banco de dados");
+			e.printStackTrace();
 			return null;
 		}
 		
 	}
-
-	public ArrayList<Equipamentos> getEquipamentoPorDescricao(String descricao) {
+//consulta 03
+	public ArrayList<Equipamentos> buscaEquipPorDescricao(String descricao) {
 		try {
 			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
-			String comandoSQL = "select identificador_equip, data_aquisicao, descricao, custo_diario_uso, em_manutencao, tipo from equipamentos where equipamentos.descricao like(%" + 
-					"''"+ descricao + "''" + "%)";
+			String comandoSQL = "select identificador_equip, data_aquisicao, descricao, custo_diario_uso, em_manutencao, tipo from equipamentos where equipamentos.descricao like ?";
 			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
+			consultaSQL.setString(1, "%" + descricao + "%");
 			ResultSet registros = consultaSQL.executeQuery(); 
 			ArrayList<Equipamentos> filtroEquip = new ArrayList<Equipamentos>();
 	
@@ -94,8 +114,79 @@ public class EmprestimosBD {
 		}
 		
 	}
-	public void relatorioReservasFuturas() {
-		// TODO Auto-generated method stub
+	//consulta 04
+
+	public int qtdReservas() throws SQLException { //COMO FAZER ISSO COM COUNT(*) ????
+		int count = 0;
+		
+		Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD); 
+        String comandoSQL = "SELECT * FROM EMPRESTIMOS";
+        PreparedStatement stmt = conexao.prepareStatement(comandoSQL);
+	
+		ResultSet resultado = stmt.executeQuery();
+
+		while(resultado.next()){
+			count = count+1;		
+		}
+		
+		stmt.close();
+		conexao.close();
+		return count;
+		
+	}
+	public boolean realizaReserva(Reserva reserva) {
+		boolean sucesso = false;
+		try {
+			
+			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
+			reserva.setIdentificador_emprestimo(qtdReservas());
+			String comandoSQL = "INSERT INTO EMPRESTIMOS(identificador_emprestimo, data_inicial_reserva, data_final_reserva,nro_matricula,identificador_equip)  VALUES(?, ?, ?, ?, ?) ";
+			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
+			consultaSQL.setInt(1, reserva.getIdentificador_emprestimo());
+			consultaSQL.setDate(2, Date.valueOf(reserva.getData_inicial_reserva()));
+			consultaSQL.setDate(3, Date.valueOf(reserva.getData_final_reserva()));
+			consultaSQL.setString(4, reserva.getNro_matricula());
+			consultaSQL.setString(5,reserva.getIdentificador_equip());
+
+			if(consultaSQL.executeUpdate() > 0){
+				sucesso = true;
+			}
+			consultaSQL.close();
+			conexao.close();
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Erro ao instanciar o banco de dados");
+			
+		}
+		return sucesso;
+	}
+	//consulta 05 (quem reservou qual equipamento e para qual período)
+	public ArrayList<String> relatorioReservasFuturas() {
+		try {
+			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
+			String comandoSQL = "select nome_completo, nro_matricula, identificador_equip, data_inicial_reserva, data_final_reserva from funcionarios join emprestimos using(nro_matricula) join equipamentos using (identificador_equip) where data_inicial_reserva > SYSDATE group by nome_completo,nro_matricula, identificador_equip, data_inicial_reserva, data_final_reserva order by data_inicial_reserva";
+			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
+			ResultSet registros = consultaSQL.executeQuery(); 
+			ArrayList<String> filtroEquipFunctData = new ArrayList<String>();
+	
+		    while(registros.next()){
+		    	filtroEquipFunctData.add("Nome do Funcionário: " + registros.getString("nome_completo")
+		    	+ ", Número matrícula: " + registros.getString("nro_matricula")
+		    	+ ", Data Inicial Reserva: " + registros.getDate("data_inicial_reserva")
+		    	+ ", Data Final da Reserva: " + registros.getDate("data_final_reserva")
+		    	+ ", Identificador do equipamento: " + registros.getString("identificador_equip")
+		    	);
+		    }
+		    registros.close();
+		    consultaSQL.close();
+			return filtroEquipFunctData;
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Erro ao instanciar o banco de dados");
+			return null;
+		}
 		
 	}
 	public void qtdReservasEcustoPorFunc() {
@@ -106,10 +197,8 @@ public class EmprestimosBD {
 		// TODO Auto-generated method stub
 		
 	}
-	public void realizaReserva(Reserva reserva) {
-		// TODO Auto-generated method stub
-		
-	}
+
+
 
 	
 }
