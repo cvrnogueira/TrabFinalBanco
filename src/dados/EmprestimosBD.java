@@ -7,12 +7,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import negocio.Equipamentos;
 import negocio.Funcionario;
 import negocio.Reserva;
-import negocio.comandaOperacoes;
 
 public class EmprestimosBD {
 	private Connection conexao;
@@ -92,7 +90,7 @@ public class EmprestimosBD {
 	public ArrayList<Equipamentos> buscaEquipPorDescricao(String descricao) {
 		try {
 			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
-			String comandoSQL = "select identificador_equip, data_aquisicao, descricao, custo_diario_uso, em_manutencao, tipo from equipamentos where equipamentos.descricao like ?";
+			String comandoSQL = "select identificador_equip, data_aquisicao, descricao, custo_diario_uso, em_manutencao, tipo from equipamentos where UPPER(equipamentos.descricao) like ?";
 			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
 			consultaSQL.setString(1, "%" + descricao + "%");
 			ResultSet registros = consultaSQL.executeQuery(); 
@@ -138,7 +136,12 @@ public class EmprestimosBD {
 		boolean sucesso = false;
 	
 			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
-			reserva.setIdentificador_emprestimo(qtdReservas());
+			String comandoSQLQtdReservas ="SELECT seq_emprestimos.NEXTVAL as sequencia FROM DUAL";
+			PreparedStatement consultaSQLQtdReservas = conexao.prepareStatement(comandoSQLQtdReservas);
+			ResultSet resultado = consultaSQLQtdReservas.executeQuery();
+			while(resultado.next()){
+				reserva.setIdentificador_emprestimo(resultado.getInt("sequencia"));	
+			}
 			String comandoSQL = "INSERT INTO EMPRESTIMOS(identificador_emprestimo, data_inicial_reserva, data_final_reserva,nro_matricula,identificador_equip)  VALUES(?, ?, ?, ?, ?) ";
 			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
 			consultaSQL.setInt(1, reserva.getIdentificador_emprestimo());
@@ -234,8 +237,29 @@ public class EmprestimosBD {
 		
 	}
 
-
-
-
+	public ArrayList<String> listaFuncionariosSemReserva() {
+		try {
+			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
+			String comandoSQL = "select funcionarios.nro_matricula,funcionarios.nome_completo from funcionarios where funcionarios.nro_matricula NOT IN (SELECT emprestimos.nro_matricula FROM emprestimos)";
+			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
+			ResultSet registros = consultaSQL.executeQuery(); 
+			ArrayList<String> functSemReservas = new ArrayList<String>();
+	
+		    while(registros.next()){
+		    	functSemReservas.add("Número de matrícula: " + registros.getString("nro_matricula")
+		    	+ ", Nome do funcionário: " + registros.getString("nome_completo")
+		    	);
+		    }
+		    registros.close();
+		    consultaSQL.close();
+			return functSemReservas;
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Erro ao instanciar o banco de dados");
+			return null;
+		}
+		
+	}
 	
 }

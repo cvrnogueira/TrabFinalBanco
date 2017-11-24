@@ -18,10 +18,6 @@ public class comandaOperacoes {
 		}		
 		return(instance);	
 	}
-	public void realizaOperacoesByName(int option, String nome) {
-		// TODO Auto-generated method stub
-		
-	}
 	//caso zero
 	public boolean sair() throws SQLException {
 		try {
@@ -54,12 +50,13 @@ public class comandaOperacoes {
 	//caso 03
 		public ArrayList<Equipamentos> buscaEquipPorDescricao(String descricao) throws SQLException {
 			try {
-				return EmprestimosBD.getInstance().buscaEquipPorDescricao(descricao);
+				return EmprestimosBD.getInstance().buscaEquipPorDescricao(descricao.toUpperCase());
 			} 
 			catch (ClassNotFoundException e) {
 			}
 			return null;
 	}
+		//caso 04
 	public boolean fazerNovaReserva(Reserva realizaReserva) throws SQLException {
 		try {
 			return EmprestimosBD.getInstance().realizaReserva(realizaReserva);
@@ -100,6 +97,16 @@ public class comandaOperacoes {
 		return null;
 		
 	}
+	//consulta 08
+		public ArrayList<String> listaFuncionariosSemReserva() throws SQLException {
+			try {
+				return EmprestimosBD.getInstance().listaFuncionariosSemReserva();
+			} 
+			catch (ClassNotFoundException e) {
+			}
+			return null;
+			
+		}
 
 
 }

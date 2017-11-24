@@ -20,7 +20,7 @@ public class Equipamentos {
 	}
 	@Override
 	public String toString(){
-		return "ID: " + identificador_equip + ",Custo Diário de Uso: R$" + custo_diario_uso + ", Em Manutenção?: " + em_manutencao;
+		return "ID: " + identificador_equip + ", Descrição completa: " +descricao+ ", Custo Diário de Uso: R$" + custo_diario_uso + ", Em Manutenção?: " + em_manutencao;
 	}
 }
 

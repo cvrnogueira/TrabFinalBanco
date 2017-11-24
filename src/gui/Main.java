@@ -1,11 +1,7 @@
 package gui;
 
-import java.sql.Date;
 import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -22,25 +18,26 @@ public class Main {
 		comandaOperacoes comandaOperacao = new comandaOperacoes();
 		String nome = null;
 		String descricao = null;
-		String lixo = null;
 		int option;
 		do {
-			System.out.println("====Digite o N�mero da op��o====");
-			System.out.println("1) Listar funcionarios em ordem alfab�tica -ok");
-			System.out.println("2) Buscar funcion�rio por nome -ok");
-			System.out.println("3) Buscar equipamento por descrição -ok");
-			System.out.println("4) Fazer uma nova reserva -ok");
-			System.out.println("5) Relatorio de reservas futuras -ok");
-			System.out.println("6) Visualizar a quantidade de reservas de um equipamento e o total do custo correspondente");
-			System.out.println("7) Listar n�mero de reserva e custo total de uso de equipamentos por funcin�rio");
-			System.out.println("8) TODO: [Uma consulta � escolha do grupo (deve envolver pelo menos uma subconsulta)]");
+
+			System.out.println("-------------Bem vindo!-------------");
+			System.out.println("Digite o Número da opção, por favor");
 			System.out.println("0) Sair");
+			System.out.println("1) Listar funcionarios em ordem alfab�tica");
+			System.out.println("2) Buscar funcionário por nome");
+			System.out.println("3) Buscar equipamento por descrição ");
+			System.out.println("4) Fazer uma nova reserva");
+			System.out.println("5) Relatorio de reservas futuras");
+			System.out.println("6) Visualizar a quantidade de reservas de um equipamento e o total do custo correspondente");
+			System.out.println("7) Listar número de reserva e custo total de uso de equipamentos por funcin�rio");
+			System.out.println("8) Listagem de todos funcionários sem reserva");
 			option = in.nextInt();
 			switch(option){
 				case 0:{
 					try {
 						if(comandaOperacao.sair()){
-							System.out.println("Conexão fechada adequadamente!");
+							System.out.println("Obrigada por usar o sistema!");
 						}
 					} catch (SQLException e) {
 						System.out.println("Erro!");
@@ -197,8 +194,21 @@ public class Main {
 					break;
 				}
 				case 8: {
-					//TODO: comandaOperacao.consultaAEscolha();
-					System.out.println("Consulta a escolha");
+					ArrayList<String> functSemReservas;
+					try {
+						functSemReservas = comandaOperacao.listaFuncionariosSemReserva();
+						if(functSemReservas.isEmpty()){
+							System.out.println("Não há funcionários sem reserva no sistema!");
+						}
+						else{
+							for(String s: functSemReservas){
+								System.out.println(s);
+							}
+						}
+					} catch (SQLException e) {
+
+						System.out.println("Erro!");
+					}
 					break;
 				}
 				default:{
