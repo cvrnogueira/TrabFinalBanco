@@ -30,7 +30,7 @@ public class Main {
 			System.out.println("2) Buscar funcion�rio por nome -ok");
 			System.out.println("3) Buscar equipamento por descrição -ok");
 			System.out.println("4) Fazer uma nova reserva -ok");
-			System.out.println("5) Relatorio de reservas futuras");
+			System.out.println("5) Relatorio de reservas futuras -ok");
 			System.out.println("6) Visualizar a quantidade de reservas de um equipamento e o total do custo correspondente");
 			System.out.println("7) Listar n�mero de reserva e custo total de uso de equipamentos por funcin�rio");
 			System.out.println("8) TODO: [Uma consulta � escolha do grupo (deve envolver pelo menos uma subconsulta)]");
@@ -104,7 +104,6 @@ public class Main {
 				}
 				case 4: {
 					try {
-					//	DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 						System.out.println("Digite o ano da data de inicio da reserva");
 						String anoInicio = in2.nextLine();
 						System.out.println("Digite o mes da data de inicio da reserva");
@@ -119,16 +118,25 @@ public class Main {
 						String diaFim = in2.nextLine();
 							LocalDate data_inicial_reserva =  LocalDate.parse(""+anoInicio +  "-"+ mesInicio+ "-" + diaInicio + "");
 							LocalDate data_final_reserva =  LocalDate.parse(""+anoFim +  "-"+ mesFim+ "-" + diaInicio + "");
+						 if(data_inicial_reserva.isAfter(LocalDate.now()) && data_final_reserva.isAfter(LocalDate.now())){
+							 System.out.println("Digite o seu número de matrícula");
+							String nro_matricula = in2.nextLine();
+							System.out.println 	("Digite o seu identificador de equipamento");
+							String identificador_equip = in2.nextLine();
+							if(comandaOperacao.fazerNovaReserva(new Reserva(data_inicial_reserva,data_final_reserva, nro_matricula,identificador_equip))){
+								System.out.println("Reserva feita com sucesso!");
+							}
+						 }
+						 else{
+							 System.out.println("Sua data já passou, somente reservas para datas futuras são aceitas!");
+						 }
 					
-						System.out.println("Digite o seu número de matrícula");
-						String nro_matricula = in2.nextLine();
-						System.out.println 	("Digite o seu identificador de equipamento");
-						String identificador_equip = in2.nextLine();
-					
-					if(comandaOperacao.fazerNovaReserva(new Reserva(data_inicial_reserva,data_final_reserva, nro_matricula,identificador_equip))){
-						System.out.println("Reserva feita com sucesso!");
+					} catch(java.time.format.DateTimeParseException e){
+						System.out.println("Sua data não existe! Lembre que o fomrato é como em 02-12-2017");
 					}
-					} 
+					catch(java.sql.SQLIntegrityConstraintViolationException e){
+						System.out.println("Verifique o número de matrícula e o Identificador do equipamento!");
+					}
 					catch (Exception e) {
 							System.out.println("Erro!");
 					}
@@ -152,11 +160,40 @@ public class Main {
 					break;
 				}
 				case 6: {
-					comandaOperacao.qtdReservasEquipECusto();
+					ArrayList<String> qtdReservasECusto;
+					try {
+						System.out.println("Digite o identificador do seu eqipamento");
+						String equipId = in2.nextLine();
+						qtdReservasECusto = comandaOperacao.qtdReservasEquipECusto(equipId);
+						if(qtdReservasECusto.isEmpty()){
+							System.out.println("Tem certeza que esse identificador de equipamento exite? Não foi achado no sistema!");
+						}
+						else{
+							for(String s: qtdReservasECusto){
+								System.out.println(s);
+							}
+						}
+					} catch (SQLException e) {
+						System.out.println("Erro!");
+					}
 					break;
 				}
 				case 7: {
-					comandaOperacao.listarNumeroDeReservasECustoTotalporFunct();
+					ArrayList<String> qtdReservasECustoPorFunct;
+					try {
+						qtdReservasECustoPorFunct = comandaOperacao.listarNumeroDeReservasECustoTotalporFunct();
+						if(qtdReservasECustoPorFunct.isEmpty()){
+							System.out.println("Não há registros de empréstimos no sistema!");
+						}
+						else{
+							for(String s: qtdReservasECustoPorFunct){
+								System.out.println(s);
+							}
+						}
+					} catch (SQLException e) {
+
+						System.out.println("Erro!");
+					}
 					break;
 				}
 				case 8: {

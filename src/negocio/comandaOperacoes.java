@@ -44,7 +44,7 @@ public class comandaOperacoes {
 	//caso 02
 	public ArrayList<Funcionario> buscaFuncionarioPorNome(String nome) throws SQLException {
 		try {
-			return EmprestimosBD.getInstance().getFuncionarioPorNome(nome);
+			return EmprestimosBD.getInstance().getFuncionarioPorNome((nome).toUpperCase());
 		} 
 		catch (ClassNotFoundException e) {
 		}
@@ -79,13 +79,27 @@ public class comandaOperacoes {
 		return null;
 		
 	}
-	public void qtdReservasEquipECusto() {
-		// TODO Auto-generated method stub
+	//consulta 06
+	public ArrayList<String> qtdReservasEquipECusto(String equipId) throws SQLException {
+		try {
+			return EmprestimosBD.getInstance().qtdReservasEquipECusto(equipId);
+		} 
+		catch (ClassNotFoundException e) {
+		}
+		return null;
 		
 	}
-	public void listarNumeroDeReservasECustoTotalporFunct() {
-		// TODO Auto-generated method stub
+
+	//consulta 07
+	public ArrayList<String> listarNumeroDeReservasECustoTotalporFunct() throws SQLException {
+		try {
+			return EmprestimosBD.getInstance().listarNumeroDeReservasECustoTotalporFunct();
+		} 
+		catch (ClassNotFoundException e) {
+		}
+		return null;
 		
 	}
+
 
 }

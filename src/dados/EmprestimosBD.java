@@ -65,7 +65,7 @@ public class EmprestimosBD {
 	public ArrayList<Funcionario> getFuncionarioPorNome(String nome) {
 		try {	
 			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
-			String comandoSQL = ("SELECT * FROM FUNCIONARIOS WHERE FUNCIONARIOS.nome_completo LIKE ?");
+			String comandoSQL = ("SELECT * FROM FUNCIONARIOS WHERE UPPER(FUNCIONARIOS.nome_completo) LIKE ?");
 			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
 			consultaSQL.setString(1, "%" + nome + "%");
 			ResultSet registros = consultaSQL.executeQuery();
@@ -134,10 +134,9 @@ public class EmprestimosBD {
 		return count;
 		
 	}
-	public boolean realizaReserva(Reserva reserva) {
+	public boolean realizaReserva(Reserva reserva) throws SQLException {
 		boolean sucesso = false;
-		try {
-			
+	
 			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
 			reserva.setIdentificador_emprestimo(qtdReservas());
 			String comandoSQL = "INSERT INTO EMPRESTIMOS(identificador_emprestimo, data_inicial_reserva, data_final_reserva,nro_matricula,identificador_equip)  VALUES(?, ?, ?, ?, ?) ";
@@ -153,12 +152,7 @@ public class EmprestimosBD {
 			}
 			consultaSQL.close();
 			conexao.close();
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			System.out.println("Erro ao instanciar o banco de dados");
-			
-		}
+		
 		return sucesso;
 	}
 	//consulta 05 (quem reservou qual equipamento e para qual período)
@@ -189,14 +183,57 @@ public class EmprestimosBD {
 		}
 		
 	}
-	public void qtdReservasEcustoPorFunc() {
-		// TODO Auto-generated method stub
+	public ArrayList<String> qtdReservasEquipECusto(String equipId) {
+		try {
+			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
+			String comandoSQL = "select identificador_equip, count(*) as qtd_reservas, custo_diario_uso  from equipamentos join emprestimos using(identificador_equip) where identificador_equip = ? group by identificador_equip,custo_diario_uso";
+			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
+			consultaSQL.setString(1,equipId);
+			ResultSet registros = consultaSQL.executeQuery(); 
+			ArrayList<String> qtdReservasECusto = new ArrayList<String>();
+	
+		    while(registros.next()){
+		    	qtdReservasECusto.add("Custo diário de uso: " + registros.getString("custo_diario_uso")
+		    	+ ", Quantidade de Reservas: " + registros.getString("qtd_reservas")
+		    	);
+		    }
+		    registros.close();
+		    consultaSQL.close();
+			return qtdReservasECusto;
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Erro ao instanciar o banco de dados");
+			return null;
+		}
 		
 	}
-	public void qtdReservasEcustoDeEquip(Equipamentos equip) {
-		// TODO Auto-generated method stub
+	public ArrayList<String> listarNumeroDeReservasECustoTotalporFunct() {
+		try {
+			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
+			String comandoSQL = "select nro_matricula, identificador_emprestimo as nro_reserva, SUM(custo_diario_uso * (data_final_reserva - data_inicial_reserva)) as precoTotal from funcionarios join emprestimos using(nro_matricula) join equipamentos using(identificador_equip) group by nro_matricula, identificador_emprestimo";
+			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
+			ResultSet registros = consultaSQL.executeQuery(); 
+			ArrayList<String> qtdReservasECusto = new ArrayList<String>();
+	
+		    while(registros.next()){
+		    	qtdReservasECusto.add("Número de matrícula: " + registros.getString("nro_matricula")
+		    	+ ", Identificador de Reserva: " + registros.getString("nro_reserva")
+		    	+ ", Preço total: R$" + registros.getString("precoTotal")
+		    	);
+		    }
+		    registros.close();
+		    consultaSQL.close();
+			return qtdReservasECusto;
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Erro ao instanciar o banco de dados");
+			return null;
+		}
 		
 	}
+
 
 
 
