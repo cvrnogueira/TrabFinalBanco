@@ -123,6 +123,9 @@ public class Main {
 							if(comandaOperacao.fazerNovaReserva(new Reserva(data_inicial_reserva,data_final_reserva, nro_matricula,identificador_equip))){
 								System.out.println("Reserva feita com sucesso!");
 							}
+							else{
+								System.out.println("Essa data não está disponível!");
+							}
 						 }
 						 else{
 							 System.out.println("Sua data já passou, somente reservas para datas futuras são aceitas!");

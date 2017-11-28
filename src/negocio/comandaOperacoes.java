@@ -1,9 +1,13 @@
 package negocio;
 
+import java.sql.Date;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 
 import dados.EmprestimosBD;
+import javafx.util.Pair;
 
 public class comandaOperacoes {
 
@@ -59,7 +63,12 @@ public class comandaOperacoes {
 		//caso 04
 	public boolean fazerNovaReserva(Reserva realizaReserva) throws SQLException {
 		try {
-			return EmprestimosBD.getInstance().realizaReserva(realizaReserva);
+			if(EmprestimosBD.getInstance().checkDisponibilidade(realizaReserva)){
+				return EmprestimosBD.getInstance().realizaReserva(realizaReserva);
+			}
+			else{
+				return false;
+			}
 		} 
 		catch (ClassNotFoundException e) {
 		}

@@ -7,7 +7,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
+import javafx.util.Pair;
 import negocio.Equipamentos;
 import negocio.Funcionario;
 import negocio.Reserva;
@@ -28,7 +30,7 @@ public class EmprestimosBD {
 	public Boolean sair() {
 		boolean sucesso = false;
 		try {
-			conexao.close();
+			conexao.close(); //só para garantir fechamos novamente, como foi visto na aula que foi fechado duas vezespara garantir
 			sucesso = true;
 		} catch (SQLException e) {
 			System.out.println("Erro ao fechar conex�o");
@@ -51,6 +53,7 @@ public class EmprestimosBD {
 		    }
 		    registros.close();
 		    consultaSQL.close();
+		    conexao.close();
 			return allFuncionarios;
 		}
 		catch (SQLException e) {
@@ -77,6 +80,7 @@ public class EmprestimosBD {
 		    }
 		    registros.close();
 		    consultaSQL.close();
+		    conexao.close();
 			return filtroFunct;
 		}
 		catch (SQLException e) {
@@ -104,6 +108,7 @@ public class EmprestimosBD {
 		    }
 		    registros.close();
 		    consultaSQL.close();
+		    conexao.close();
 			return filtroEquip;
 		}
 		catch (SQLException e) {
@@ -113,25 +118,6 @@ public class EmprestimosBD {
 		
 	}
 	//consulta 04
-
-	public int qtdReservas() throws SQLException { //COMO FAZER ISSO COM COUNT(*) ????
-		int count = 0;
-		
-		Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD); 
-        String comandoSQL = "SELECT * FROM EMPRESTIMOS";
-        PreparedStatement stmt = conexao.prepareStatement(comandoSQL);
-	
-		ResultSet resultado = stmt.executeQuery();
-
-		while(resultado.next()){
-			count = count+1;		
-		}
-		
-		stmt.close();
-		conexao.close();
-		return count;
-		
-	}
 	public boolean realizaReserva(Reserva reserva) throws SQLException {
 		boolean sucesso = false;
 	
@@ -177,6 +163,7 @@ public class EmprestimosBD {
 		    }
 		    registros.close();
 		    consultaSQL.close();
+		    conexao.close();
 			return filtroEquipFunctData;
 		}
 		catch (SQLException e) {
@@ -186,22 +173,24 @@ public class EmprestimosBD {
 		}
 		
 	}
+
 	public ArrayList<String> qtdReservasEquipECusto(String equipId) {
 		try {
 			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
-			String comandoSQL = "select identificador_equip, count(*) as qtd_reservas, custo_diario_uso  from equipamentos join emprestimos using(identificador_equip) where identificador_equip = ? group by identificador_equip,custo_diario_uso";
+			String comandoSQL = "select identificador_equip, count(*) as qtd_reservas, SUM(custo_diario_uso * (data_final_reserva -  data_inicial_reserva)) as somaCustos from equipamentos  join emprestimos using(identificador_equip)  where identificador_equip = ? group by identificador_equip,custo_diario_uso";
 			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
 			consultaSQL.setString(1,equipId);
 			ResultSet registros = consultaSQL.executeQuery(); 
 			ArrayList<String> qtdReservasECusto = new ArrayList<String>();
 	
 		    while(registros.next()){
-		    	qtdReservasECusto.add("Custo diário de uso: " + registros.getString("custo_diario_uso")
+		    	qtdReservasECusto.add("Custo total das reservas feitas: " + registros.getString("somaCustos")
 		    	+ ", Quantidade de Reservas: " + registros.getString("qtd_reservas")
 		    	);
 		    }
 		    registros.close();
 		    consultaSQL.close();
+		    conexao.close();
 			return qtdReservasECusto;
 		}
 		catch (SQLException e) {
@@ -227,6 +216,7 @@ public class EmprestimosBD {
 		    }
 		    registros.close();
 		    consultaSQL.close();
+		    conexao.close();
 			return qtdReservasECusto;
 		}
 		catch (SQLException e) {
@@ -240,7 +230,7 @@ public class EmprestimosBD {
 	public ArrayList<String> listaFuncionariosSemReserva() {
 		try {
 			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
-			String comandoSQL = "select funcionarios.nro_matricula,funcionarios.nome_completo from funcionarios where funcionarios.nro_matricula NOT IN (SELECT emprestimos.nro_matricula FROM emprestimos)";
+			String comandoSQL = "select funcionarios.nro_matricula,funcionarios.nome_completo from funcionarios where funcionarios.nro_matricula NOT IN (SELECT emprestimos.nro_matricula FROM emprestimos) ORDER BY funcionarios.nome_completo ASC";
 			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
 			ResultSet registros = consultaSQL.executeQuery(); 
 			ArrayList<String> functSemReservas = new ArrayList<String>();
@@ -252,6 +242,7 @@ public class EmprestimosBD {
 		    }
 		    registros.close();
 		    consultaSQL.close();
+		    conexao.close();
 			return functSemReservas;
 		}
 		catch (SQLException e) {
@@ -260,6 +251,36 @@ public class EmprestimosBD {
 			return null;
 		}
 		
+	}
+
+	public boolean checkDisponibilidade(Reserva reserva) { //RETORNA DIFERENTE DE NULL SE ACHOU ALGUMA DATA CONFLITANTE
+		boolean sucesso = false;
+		try {
+			Connection conexao = DriverManager.getConnection(BDInfo.SERVER, BDInfo.USER, BDInfo.PASSWORD);
+			String comandoSQL = "select data_final_reserva, data_inicial_reserva  from  emprestimos where (data_inicial_reserva between ? AND ? OR data_final_reserva between ? and ? OR ( data_inicial_reserva < ? and  ? < data_final_reserva ) ) AND identificador_equip = ?";
+			PreparedStatement consultaSQL = conexao.prepareStatement(comandoSQL);
+			consultaSQL.setDate(1, Date.valueOf(reserva.getData_inicial_reserva()));
+			consultaSQL.setDate(2, Date.valueOf(reserva.getData_final_reserva()));
+			consultaSQL.setDate(3, Date.valueOf(reserva.getData_inicial_reserva()));
+			consultaSQL.setDate(4, Date.valueOf(reserva.getData_final_reserva()));
+			consultaSQL.setDate(5, Date.valueOf(reserva.getData_inicial_reserva()));
+			consultaSQL.setDate(6, Date.valueOf(reserva.getData_final_reserva()));
+			consultaSQL.setString(7, reserva.getIdentificador_equip());
+			ResultSet registros = consultaSQL.executeQuery(); 
+			
+		    if(!registros.isBeforeFirst()){
+		    	sucesso = true;
+		    }
+		    registros.close();
+		    consultaSQL.close();
+		    conexao.close();
+			return sucesso;
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Erro ao instanciar o banco de dados");
+			return sucesso;
+		}
 	}
 	
 }
